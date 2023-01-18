@@ -320,6 +320,14 @@ function DeleteFollowing()
       continue
     }
 
+    var likedNewTweetDate = getLikedNewTweetDate(userId)
+    if( likedNewTweetDate == null || date<likedNewTweetDate )
+    {
+      console.log(`最新いいねしたツイートが1ヶ月以内でアクティブの為飛ばします` )
+      setSheet(userId,"active")
+      continue
+    }
+
     console.log(`最終ツイートが1ヶ月以上前で非アクティブの為フォローを外します。` )
     console.log(`制限防止の為1名のみ実行します` )
     Utilities.sleep(10000)//10秒待つ
@@ -340,7 +348,7 @@ function FindFriendOfFriendFollowing()
 {
   var sheetIds = getSheetIds("following")
   var skipIds = getSheetIds("skip")
-  var userIds = getUserList(448060353,"ryoomoi")
+  var userIds = getUserList(2309643013,"ryoomoi")
   var followingUsers = userIds.filter(item => sheetIds.includes(item)==false&&skipIds.includes(item)==false)
   console.log(`新規でフォローするアカウントを${followingUsers.length}名取得しました` )
   if(followingUsers.length==0)
@@ -541,6 +549,40 @@ function getNewTweetDate(id)
   }
   
   console.log(`【${id}】の最新ツイートは存在しませんでした。`)
+  return null
+}
+
+// ユーザーが気に入ったツイートの最新日時（最新100件内）
+function getLikedNewTweetDate( id )
+{
+  //トークン確認
+  var service = checkOAuth(appname);
+
+  //リクエスト実行
+  var response = JSON.parse(service.fetch(`https://api.twitter.com/2/users/${id}/liked_tweets?tweet.fields=created_at`)); 
+
+  console.log(response)
+  if( response["data"] )
+  {
+    var datas = response["data"]
+    console.log(`【${id}】のいいねしたツイートの最新${datas.length}件を取得しました。`)
+    var newDate
+    
+    for( data of datas )
+    {
+      var date = new Date(data["created_at"])
+      if( newDate == null ||　newDate < date)
+      {
+        newDate = date
+      }
+    }
+
+    //リクエスト結果
+    console.log(`【${id}】がいいねしたツイートの最新日時は${newDate}`)
+    return newDate
+  }
+  
+  console.log(`【${id}】がいいねしたツイートは存在しませんでした。`)
   return null
 }
 
