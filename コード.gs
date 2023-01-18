@@ -372,20 +372,31 @@ function FindFriendOfFriendFollowing()
     var date = new Date();
     date.setDate(date.getDate() - 1);
 
-    if(newTweetDate==null ||date>newTweetDate)
+    if( newTweetDate != null && date < newTweetDate )
     {
-      console.log(`最終ツイートが24時間以上前の為飛ばします` )
-      setSheet(userId,"skip")
-      continue
+      followingAndSetSheet(userId)
+      return
     }
 
-    console.log(`フォロー制限防止の為1名のみフォロー実行します` )
-    Utilities.sleep(10000)//10秒待ってからフォローする
-    following(userId)
-    setSheet(userId,"following")
-    console.log(`ユーザーID${userId}をフォローしました` )
-    return
+    var likedNewTweetDate = getLikedNewTweetDate(userId)
+    if( likedNewTweetDate != null && date < likedNewTweetDate )
+    {
+      followingAndSetSheet(userId)
+      return
+    }
+    
+    console.log(`最終Twitter更新が24時間以上前の為飛ばします` )
+    setSheet(userId,"skip")
   }
+}
+
+// ユーザーをフォローしてフォローシートに記載する
+function followingAndSetSheet( userId )
+{
+  Utilities.sleep(10000)//10秒待ってからフォローする
+  following( userId )
+  setSheet( userId, "following" )
+  console.log(`ユーザーID${userId}をフォローしました` )
 }
 
 function ReportFF()
@@ -561,7 +572,6 @@ function getLikedNewTweetDate( id )
   //リクエスト実行
   var response = JSON.parse(service.fetch(`https://api.twitter.com/2/users/${id}/liked_tweets?tweet.fields=created_at`)); 
 
-  console.log(response)
   if( response["data"] )
   {
     var datas = response["data"]
