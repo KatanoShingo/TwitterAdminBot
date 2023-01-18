@@ -291,8 +291,8 @@ function DeleteSheetDeathUsers()
   }
 }
 
-//フォローを外す
-function DeleteFollowing()
+//非アクティブユーザーのフォローを外す
+function InactiveUserUnfollow()
 {
   var guardFollowingIds = getGuardFollowing()
  // var sheetIds = getSheetIds("following")
@@ -300,11 +300,14 @@ function DeleteFollowing()
   var followingIds = getFollowList(meUserId , "following"); 
   var deleteFollowingIds = followingIds.filter(item=>guardFollowingIds.includes(item)==false&&activeIds.includes(item)==false)
   deleteFollowingIds = deleteFollowingIds.reverse()
+  
   if(deleteFollowingIds.length==0)
   {
-    throw new Error("リムーブ候補対象アカウントがありませんでした");
+    throw new Error("非アクティブアカウントがありませんでした");
   }
-  console.log(`リムーブ候補対象アカウントを${deleteFollowingIds.length}名取得しました。` )
+
+  console.log(`アクティブ未判定アカウントを${deleteFollowingIds.length}名取得しました。` ) 
+
   for(userId of deleteFollowingIds)
   {
     var newTweetDate = getNewTweetDate(userId)
@@ -335,15 +338,38 @@ function DeleteFollowing()
     console.log(`ユーザーID${userId}をリムーブしました` )
     return
   }
- //  var kataomoiIds = getUserList(meUserId,"kataomoi")
- //  var sheetDatas = getSheetDatas("following")
 }
-function Test()
-{ var sheetIds = getSheetIds("following")
- console.log(sheetIds.reverse() )
-  //  var sheetDatas = getSheetDatas("skip")
- //  console.log( sheetDatas.reverse())
+
+//片思いユーザーのフォローを 外す
+function KataomoiUserUnfollow()
+{ 
+  // 1週間前の日時取得
+  var date = new Date();
+  date.setDate(date.getDate() - 7);
+
+  //保護リスト
+  var guardFollowingIds = getGuardFollowing()
+  
+  //片思いリスト
+  var kataomoiIds = getUserList(meUserId,"kataomoi")
+  
+  //フォローしたユーザー日時データ
+  var sheetDatas = getSheetDatas("following")
+
+  //フォロー解除リスト
+  var list = sheetDatas.filter(item=>guardFollowingIds.includes(item[0])==false&&kataomoiIds.includes(item[0])&&item[1]<date)
+  
+  console.log( `フォロー解除リストを${list.length}名取得`)
+  for( userData of list )
+  {
+    console.log(`制限防止の為1名のみ実行します` )
+    Utilities.sleep(10000)//10秒待つ
+    deleteFollowing(userData[0])
+    console.log(`ユーザーID【${userData[0]}】をリムーブしました` )
+    return
+  }
 }
+
 function FindFriendOfFriendFollowing()
 {
   var sheetIds = getSheetIds("following")
@@ -629,7 +655,7 @@ function setSheet(userId,sheetName)
 {
   var spreadsheet = SpreadsheetApp.getActiveSpreadsheet();
   var sheet = spreadsheet.getSheetByName(sheetName);
-  sheet.appendRow([userId,new Date()]);
+  sheet.appendRow([userId.toString(),new Date()]);
 }
 
 // スプレットシートからユーザーIDリスト読み込む
@@ -662,10 +688,17 @@ function getSheetDatas(sheetName)
   var spreadsheet = SpreadsheetApp.getActiveSpreadsheet();
   var sheet = spreadsheet.getSheetByName(sheetName);
   var lastRow = sheet.getLastRow();
-  var ranges = sheet.getRange(1, 1, lastRow,2).getDisplayValues();
+  var ranges = sheet.getRange(1, 1, lastRow,2).getValues();
   
-  console.log(`【${sheetName}】Dataリストを${ranges.length}件取得しました` )
-  return ranges
+  //型がずれている場合があるので揃える
+  var datas = []
+  for(range of ranges)
+  {
+    datas.push([range[0].toString(),new Date(range[1])])
+  } 
+  
+  console.log(`【${sheetName}】Dataリストを${datas.length}件取得しました` )
+  return datas
 }
 
 // フォローリストを取得してシートに記載
