@@ -671,15 +671,26 @@ function getFFRate(id)
   var service = checkOAuth(appname);
 
   var response
-  try
+  var count=0
+  while(count<5)
   {
-    //リクエスト実行
-    response = JSON.parse(service.fetch(`https://api.twitter.com/2/users/${id}`+"?user.fields=public_metrics")); 
-  }
-  catch(error)
-  {
-    console.log(error.message)
-    throw new Error("エラー");
+    count++
+    try
+    {
+      //リクエスト実行
+      response = JSON.parse(service.fetch(`https://api.twitter.com/2/users/${id}`+"?user.fields=public_metrics")); 
+      break
+    }
+    catch(error)
+    {
+      if(error.message.includes("Address unavailable")==false||count>=5)
+      {
+        throw new Error(error.message);
+      }
+      
+      console.log(error.message)
+      Utilities.sleep(10000)//10秒待ってから再実行
+    }
   }
 
   var data = response["data"]
