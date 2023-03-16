@@ -337,6 +337,7 @@ function InactiveUserUnfollow()
     Utilities.sleep(10000)//10秒待つ
     deleteFollowing(userId)
     console.log(`ユーザーID${userId}をリムーブしました` )
+    setSheet( userId, "unfollowing" )
     return
   }
 }
@@ -367,6 +368,7 @@ function KataomoiUserUnfollow()
     Utilities.sleep(10000)//10秒待つ
     deleteFollowing(userData[0])
     console.log(`ユーザーID【${userData[0]}】をリムーブしました` )
+    setSheet( userData[0], "unfollowing" )
     return
   }
 }
