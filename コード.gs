@@ -342,6 +342,46 @@ function InactiveUserUnfollow()
   }
 }
 
+// フォロー中が多いアカウントのフォローを外す
+function SpamUserUnfollow()
+{ 
+  var alphaIds = getSheetIds("alpha")
+
+  // 1週間前の日時取得
+  var date = new Date();
+  date.setDate(date.getDate() - 7);
+
+  //保護リスト
+  var guardFollowingIds = getGuardFollowing()
+  
+  //フォロー中
+  var followingIds = getFollowList(meUserId , "following"); 
+  
+  //フォローしたユーザー日時データ
+  var sheetDatas = getSheetDatas("following")
+
+  //フォロー解除リスト
+  var list = sheetDatas.filter(item=>guardFollowingIds.includes(item[0])==false&&followingIds.includes(item[0])&&item[1]<date&&alphaIds.includes(item[0])==false)
+  
+  console.log( `フォロー解除リストを${list.length}名取得`)
+  for( userData of list )
+  { 
+    var rate = getFFRate(userData[0])
+    var followersNum = getFollowersNum(userData[0])
+    if( rate < 0.9 || followersNum < 1000)
+    {
+      Utilities.sleep(10000)//10秒待つ
+      deleteFollowing(userData[0])
+      console.log(`ユーザーID【${userData[0]}】をリムーブしました` )
+      setSheet( userData[0], "unfollowing" )
+      return
+    }
+
+    console.log(`FF比が0.9以上&フォロワーが1000以上でした` )
+    setSheet(userData[0],"alpha")
+  }
+}
+
 //片思いユーザーのフォローを 外す
 function KataomoiUserUnfollow()
 { 
@@ -651,6 +691,43 @@ function getFFRate(id)
   var rate = followers / following
   console.log(`名前：${name}　FF比：${rate}`)
   return rate
+}
+
+function getFollowersNum(id)
+{
+  //トークン確認
+  var service = checkOAuth(appname);
+
+  var response
+
+  var count=0
+  while(count<5)
+  {
+    count++
+    try
+    {
+      //リクエスト実行
+      response = JSON.parse(service.fetch(`https://api.twitter.com/2/users/${id}`+"?user.fields=public_metrics")); 
+      break
+    }
+    catch(error)
+    {
+      if(error.message.includes("Address unavailable")==false||count>=5)
+      {
+        throw new Error(error.message);
+      }
+      
+      console.log(error.message)
+      Utilities.sleep(10000)//10秒待ってから再実行
+    }
+  }
+
+  var data = response["data"]
+  var name = data["name"]
+  var metrics = data["public_metrics"]
+  var followers = metrics["followers_count"]
+  console.log(`名前：${name}　フォロワー数：${followers}`)
+  return followers
 }
 
 // ユーザーIDをスプレットシートに書き込む
