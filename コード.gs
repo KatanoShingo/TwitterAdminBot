@@ -13,6 +13,7 @@ function onOpen(e) {
 var mePinnedTweetId=PropertiesService.getScriptProperties().getProperty('PINNED_TWEET_ID');
 var meUserId=PropertiesService.getScriptProperties().getProperty('USER_ID');
 var meListId=PropertiesService.getScriptProperties().getProperty('LIST_ID');
+var targetUserId=PropertiesService.getScriptProperties().getProperty('TARGET_ID');
 
 //認証用の各種変数
 var  apikey = PropertiesService.getScriptProperties().getProperty('API_KEY');
@@ -374,7 +375,7 @@ function FindFriendOfFriendFollowing()
 {
   var sheetIds = getSheetIds("following")
   var skipIds = getSheetIds("skip")
-  var userIds = getUserList(2309643013,"ryoomoi")
+  var userIds = getUserList(targetUserId,"ryoomoi")
   var followingUsers = userIds.filter(item => sheetIds.includes(item)==false&&skipIds.includes(item)==false)
   console.log(`新規でフォローするアカウントを${followingUsers.length}名取得しました` )
   if(followingUsers.length==0)
