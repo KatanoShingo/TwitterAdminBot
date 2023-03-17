@@ -102,16 +102,16 @@ function testtweet(){
 }
 
 const SheetNames = Object.freeze({
-  skip: "skip",
-  bookingTarget: "bookingTarget",
-  bookingTargetFollowing: "bookingTargetFollowing",
-  bookingTargetFollowers: "bookingTargetFollowers",
-  bookingFollowing: "bookingFollowing",
-  alpha: "alpha",
-  active: "active",
-  following: "following",
-  unfollowing: "unfollowing",
-  report: "report",
+  SKIP: "skip",
+  BOOKING_TARGET: "bookingTarget",
+  BOOKING_TARGET_FOLLOWING: "bookingTargetFollowing",
+  BOOKING_TARGET_FOLLOWERS: "bookingTargetFollowers",
+  BOOKING_FOLLOWING: "bookingFollowing",
+  ALPHA: "alpha",
+  ACTIVE: "active",
+  FOLLOWING: "following",
+  UNFOLLOWING: "unfollowing",
+  REPORT: "report",
 });
 
 //自分の情報取得
@@ -227,7 +227,7 @@ function getMeTweetlikeingUsers()
 
 function MeTweetlikeingUsersfollowing()
 {
-  var sheetIds = getSheetIds(SheetNames.following)
+  var sheetIds = getSheetIds(SheetNames.FOLLOWING)
   var likeingUsers = getMeTweetlikeingUsers()
   var followingUsers = likeingUsers.filter(item => sheetIds.includes(item[0])==false)
   console.log(`新規でフォローするアカウントを${followingUsers.length}名取得しました` )
@@ -247,7 +247,7 @@ function MeTweetlikeingUsersfollowing()
     count++
     // console.log(`全体進捗：${count}/${followingUsers.length}` )
     following(userId)
-    setSheet(userId,SheetNames.following)
+    setSheet(userId,SheetNames.FOLLOWING)
      console.log(`${name}をフォローしました` )
      return
   } 
@@ -255,7 +255,7 @@ function MeTweetlikeingUsersfollowing()
 
 function FindTweetsUsersfollowing()
 {
-  var sheetIds = getSheetIds(SheetNames.following)
+  var sheetIds = getSheetIds(SheetNames.FOLLOWING)
   var userIds = findTweetsUserIds("#VRChat始めてました OR #VRChat始めました OR 自作トラッカー lang:ja",100)
   var followingUsers = userIds.filter(item => sheetIds.includes(item)==false)
   console.log(`新規でフォローするアカウントを${followingUsers.length}名取得しました` )
@@ -276,7 +276,7 @@ function FindTweetsUsersfollowing()
     console.log(`フォロー制限防止の為1名のみフォロー実行します` )
     Utilities.sleep(10000)//10秒待ってからフォローする
     following(userId)
-    setSheet(userId,SheetNames.following)
+    setSheet(userId,SheetNames.FOLLOWING)
     console.log(`ユーザーID${userId}をフォローしました` )
     return
   }
@@ -285,15 +285,15 @@ function FindTweetsUsersfollowing()
 // エラーユーザーIDをシートから削除する
 function DeleteSheetDeathUsers()
 {
-  var sheetIds = getSheetIds(SheetNames.following)
+  var sheetIds = getSheetIds(SheetNames.FOLLOWING)
   var errorIds = getErrorUsersData(sheetIds)
 
   var spreadsheet = SpreadsheetApp.getActiveSpreadsheet();
-  var sheet = spreadsheet.getSheetByName(SheetNames.following);
+  var sheet = spreadsheet.getSheetByName(SheetNames.FOLLOWING);
 
   for(errorId of errorIds)
   {
-    sheetIds = getSheetIds(SheetNames.following)
+    sheetIds = getSheetIds(SheetNames.FOLLOWING)
     var deleteIndex = sheetIds.indexOf(errorId)
     if(0>deleteIndex)
     {
@@ -309,8 +309,8 @@ function DeleteSheetDeathUsers()
 function InactiveUserUnfollow()
 {
   var guardFollowingIds = getGuardFollowing()
-  var activeIds = getSheetIds(SheetNames.active)
-  var followingIds = getFollowList(meUserId , SheetNames.following); 
+  var activeIds = getSheetIds(SheetNames.ACTIVE)
+  var followingIds = getFollowList(meUserId , SheetNames.FOLLOWING); 
   var deleteFollowingIds = followingIds.filter(item=>guardFollowingIds.includes(item)==false&&activeIds.includes(item)==false)
   deleteFollowingIds = deleteFollowingIds.reverse()
   
@@ -332,7 +332,7 @@ function InactiveUserUnfollow()
     if(newTweetDate==null || date<newTweetDate)
     {
       console.log(`最終ツイートが1ヶ月以内でアクティブの為飛ばします` )
-      setSheet(userId,SheetNames.active)
+      setSheet(userId,SheetNames.ACTIVE)
       continue
     }
 
@@ -340,7 +340,7 @@ function InactiveUserUnfollow()
     if( likedNewTweetDate == null || date<likedNewTweetDate )
     {
       console.log(`最新いいねしたツイートが1ヶ月以内でアクティブの為飛ばします` )
-      setSheet(userId,SheetNames.active)
+      setSheet(userId,SheetNames.ACTIVE)
       continue
     }
 
@@ -349,7 +349,7 @@ function InactiveUserUnfollow()
     Utilities.sleep(10000)//10秒待つ
     deleteFollowing(userId)
     console.log(`ユーザーID${userId}をリムーブしました` )
-    setSheet( userId, SheetNames.unfollowing )
+    setSheet( userId, SheetNames.UNFOLLOWING )
     return
   }
 }
@@ -357,7 +357,7 @@ function InactiveUserUnfollow()
 // フォロー中が多いアカウントのフォローを外す
 function SpamUserUnfollow()
 { 
-  var alphaIds = getSheetIds(SheetNames.alpha)
+  var alphaIds = getSheetIds(SheetNames.ALPHA)
 
   // 1週間前の日時取得
   var date = new Date();
@@ -367,10 +367,10 @@ function SpamUserUnfollow()
   var guardFollowingIds = getGuardFollowing()
   
   //フォロー中
-  var followingIds = getFollowList(meUserId , SheetNames.following); 
+  var followingIds = getFollowList(meUserId , SheetNames.FOLLOWING); 
   
   //フォローしたユーザー日時データ
-  var sheetDatas = getSheetDatas(SheetNames.following)
+  var sheetDatas = getSheetDatas(SheetNames.FOLLOWING)
 
   //フォロー解除リスト
   var list = sheetDatas.filter(item=>guardFollowingIds.includes(item[0])==false&&followingIds.includes(item[0])&&item[1]<date&&alphaIds.includes(item[0])==false)
@@ -385,12 +385,12 @@ function SpamUserUnfollow()
       Utilities.sleep(10000)//10秒待つ
       deleteFollowing(userData[0])
       console.log(`ユーザーID【${userData[0]}】をリムーブしました` )
-      setSheet( userData[0], SheetNames.unfollowing )
+      setSheet( userData[0], SheetNames.UNFOLLOWING )
       return
     }
 
     console.log(`FF比が0.9以上&フォロワーが1000以上でした` )
-    setSheet(userData[0],SheetNames.alpha)
+    setSheet(userData[0],SheetNames.ALPHA)
   }
 }
 
@@ -408,7 +408,7 @@ function KataomoiUserUnfollow()
   var kataomoiIds = getUserList(meUserId,"kataomoi")
   
   //フォローしたユーザー日時データ
-  var sheetDatas = getSheetDatas(SheetNames.following)
+  var sheetDatas = getSheetDatas(SheetNames.FOLLOWING)
 
   //フォロー解除リスト
   var list = sheetDatas.filter(item=>guardFollowingIds.includes(item[0])==false&&kataomoiIds.includes(item[0])&&item[1]<date)
@@ -420,15 +420,15 @@ function KataomoiUserUnfollow()
     Utilities.sleep(10000)//10秒待つ
     deleteFollowing(userData[0])
     console.log(`ユーザーID【${userData[0]}】をリムーブしました` )
-    setSheet( userData[0], SheetNames.unfollowing )
+    setSheet( userData[0], SheetNames.UNFOLLOWING )
     return
   }
 }
 
 function FindFriendOfFriendFollowing()
 {
-  var sheetIds = getSheetIds(SheetNames.following)
-  var skipIds = getSheetIds(SheetNames.skip)
+  var sheetIds = getSheetIds(SheetNames.FOLLOWING)
+  var skipIds = getSheetIds(SheetNames.SKIP)
   var userIds = getUserList(targetUserId,"ryoomoi")
   var followingUsers = userIds.filter(item => sheetIds.includes(item)==false&&skipIds.includes(item)==false)
   console.log(`新規でフォローするアカウントを${followingUsers.length}名取得しました` )
@@ -443,7 +443,7 @@ function FindFriendOfFriendFollowing()
     if( rate > 1.1 )
     {
       console.log(`FF比が1.1以上の為飛ばします` )
-      setSheet(userId,SheetNames.skip)
+      setSheet(userId,SheetNames.SKIP)
       continue
     }
 
@@ -467,7 +467,7 @@ function FindFriendOfFriendFollowing()
     }
     
     console.log(`最終Twitter更新が24時間以上前の為飛ばします` )
-    setSheet(userId,SheetNames.skip)
+    setSheet(userId,SheetNames.SKIP)
   }
 }
 
@@ -476,7 +476,7 @@ function followingAndSetSheet( userId )
 {
   Utilities.sleep(10000)//10秒待ってからフォローする
   following( userId )
-  setSheet( userId, SheetNames.following )
+  setSheet( userId, SheetNames.FOLLOWING )
   console.log(`ユーザーID${userId}をフォローしました` )
 }
 
@@ -491,11 +491,11 @@ function ReportFF()
 function setSheetFF(meData)
 {
   var spreadsheet = SpreadsheetApp.getActiveSpreadsheet();
-  var sheet = spreadsheet.getSheetByName(SheetNames.report);
+  var sheet = spreadsheet.getSheetByName(SheetNames.REPORT);
   var meMetrics = meData["public_metrics"]
   var followingCount = meMetrics["following_count"]
   var followersCount = meMetrics["followers_count"]
-  var totalFollowingCount = getSheetIds(SheetNames.following)
+  var totalFollowingCount = getSheetIds(SheetNames.FOLLOWING)
   sheet.appendRow([new Date(),followingCount,followersCount,totalFollowingCount.length]);
   console.log(`FF数を保存しました` )
   console.log(`フォロー数：${followingCount}フォロワー数：${followersCount}歴代フォロー数：${totalFollowingCount.length}` )
@@ -503,7 +503,7 @@ function setSheetFF(meData)
 
 function manualFindTweetsUsersfollowing()
 {
-  var sheetIds =getSheetIds(SheetNames.following)
+  var sheetIds =getSheetIds(SheetNames.FOLLOWING)
   var userIds= findTweetsUserIds("#VRC個人開発集会",10)
   for(userId of userIds)
   {
@@ -516,7 +516,7 @@ function manualFindTweetsUsersfollowing()
     Utilities.sleep(10000)//10秒待ってからフォローする
     following(userId)
     console.log(`ユーザーID${userId}をフォローしました` )
-    setSheet(userId,SheetNames.following)
+    setSheet(userId,SheetNames.FOLLOWING)
   }
 }
 
@@ -527,7 +527,7 @@ function getUserList( id, status )
   var service = checkOAuth(appname);
 
   //リクエスト実行
-  var followingList = getFollowList(id , SheetNames.following); 
+  var followingList = getFollowList(id , SheetNames.FOLLOWING); 
   var followersList = getFollowList(id , "followers"); 
 
   var ids = []
@@ -808,13 +808,13 @@ function getSheetDatas(sheetName)
 // 手動フォローはリストに記載されない為
 function SetSheetUsersfollowing()
 {
-  var sheetIds = getSheetIds(SheetNames.following)
-  var followingList = getFollowList(meUserId , SheetNames.following); 
+  var sheetIds = getSheetIds(SheetNames.FOLLOWING)
+  var followingList = getFollowList(meUserId , SheetNames.FOLLOWING); 
   var ids = followingList.filter(item=>sheetIds.includes(item)==false)
     console.log(`${ids.length}名未記載のユーザーを発見しました` )
   for(id of ids)
   {
-    setSheet(id,SheetNames.following)
+    setSheet(id,SheetNames.FOLLOWING)
     console.log(`ユーザーID${id}をフォローシートに記載しました` )
   } 
 }
