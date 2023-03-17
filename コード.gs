@@ -10,10 +10,10 @@ function onOpen(e) {
       .addToUi();
 }
 
-var mePinnedTweetId=PropertiesService.getScriptProperties().getProperty('PINNED_TWEET_ID');
-var meUserId=PropertiesService.getScriptProperties().getProperty('USER_ID');
-var meListId=PropertiesService.getScriptProperties().getProperty('LIST_ID');
-var targetUserId=PropertiesService.getScriptProperties().getProperty('TARGET_ID');
+const ME_PINNED_TWEET_ID = PropertiesService.getScriptProperties().getProperty('PINNED_TWEET_ID');
+const ME_USER_ID = PropertiesService.getScriptProperties().getProperty('USER_ID');
+const ME_LIST_ID = PropertiesService.getScriptProperties().getProperty('LIST_ID');
+const TARGET_USER_ID = PropertiesService.getScriptProperties().getProperty('TARGET_ID');
 
 //認証用の各種変数
 var  apikey = PropertiesService.getScriptProperties().getProperty('API_KEY');
@@ -133,7 +133,7 @@ function getMelist(){
   var service = checkOAuth(appname);
 
   //リクエスト実行
-  var response = JSON.parse(service.fetch(`https://api.twitter.com/2/users/${meUserId}/owned_lists`)); 
+  var response = JSON.parse(service.fetch(`https://api.twitter.com/2/users/${ME_USER_ID }/owned_lists`)); 
   //リクエスト結果
   console.log(response)
 }
@@ -145,7 +145,7 @@ function getGuardFollowing()
   var service = checkOAuth(appname);
 
   //リクエスト実行
-  var response = JSON.parse(service.fetch(`https://api.twitter.com/2/lists/${meListId}/members`)); 
+  var response = JSON.parse(service.fetch(`https://api.twitter.com/2/lists/${ME_LIST_ID }/members`)); 
   //リクエスト結果
   var ids = []
   for(user of response["data"])
@@ -164,7 +164,7 @@ function getTimelines()
   var service = checkOAuth(appname);
 
   //リクエスト実行
-  var url = Utilities.formatString("https://api.twitter.com/2/users/%s/tweets",meUserId);
+  var url = Utilities.formatString("https://api.twitter.com/2/users/%s/tweets",ME_USER_ID );
   var response = JSON.parse(service.fetch(url)); //+"?max_results=50"
   var timelineTweetsData = response["data"]
 
@@ -196,7 +196,7 @@ function getMeTweetlikeingUsers()
     }
   }
 
-  var url = Utilities.formatString("https://api.twitter.com/2/tweets/%s/liking_users",mePinnedTweetId);
+  var url = Utilities.formatString("https://api.twitter.com/2/tweets/%s/liking_users",ME_PINNED_TWEET_ID );
   var response = JSON.parse(service.fetch(url));  
 
   //配列を連結する
@@ -310,7 +310,7 @@ function InactiveUserUnfollow()
 {
   var guardFollowingIds = getGuardFollowing()
   var activeIds = getSheetIds(SheetNames.ACTIVE)
-  var followingIds = getFollowList(meUserId , SheetNames.FOLLOWING); 
+  var followingIds = getFollowList(ME_USER_ID  , SheetNames.FOLLOWING); 
   var deleteFollowingIds = followingIds.filter(item=>guardFollowingIds.includes(item)==false&&activeIds.includes(item)==false)
   deleteFollowingIds = deleteFollowingIds.reverse()
   
@@ -367,7 +367,7 @@ function SpamUserUnfollow()
   var guardFollowingIds = getGuardFollowing()
   
   //フォロー中
-  var followingIds = getFollowList(meUserId , SheetNames.FOLLOWING); 
+  var followingIds = getFollowList(ME_USER_ID  , SheetNames.FOLLOWING); 
   
   //フォローしたユーザー日時データ
   var sheetDatas = getSheetDatas(SheetNames.FOLLOWING)
@@ -405,7 +405,7 @@ function KataomoiUserUnfollow()
   var guardFollowingIds = getGuardFollowing()
   
   //片思いリスト
-  var kataomoiIds = getUserList(meUserId,"kataomoi")
+  var kataomoiIds = getUserList(ME_USER_ID ,"kataomoi")
   
   //フォローしたユーザー日時データ
   var sheetDatas = getSheetDatas(SheetNames.FOLLOWING)
@@ -429,7 +429,7 @@ function FindFriendOfFriendFollowing()
 {
   var sheetIds = getSheetIds(SheetNames.FOLLOWING)
   var skipIds = getSheetIds(SheetNames.SKIP)
-  var userIds = getUserList(targetUserId,"ryoomoi")
+  var userIds = getUserList(TARGET_USER_ID ,"ryoomoi")
   var followingUsers = userIds.filter(item => sheetIds.includes(item)==false&&skipIds.includes(item)==false)
   console.log(`新規でフォローするアカウントを${followingUsers.length}名取得しました` )
   if(followingUsers.length==0)
@@ -809,7 +809,7 @@ function getSheetDatas(sheetName)
 function SetSheetUsersfollowing()
 {
   var sheetIds = getSheetIds(SheetNames.FOLLOWING)
-  var followingList = getFollowList(meUserId , SheetNames.FOLLOWING); 
+  var followingList = getFollowList(ME_USER_ID  , SheetNames.FOLLOWING); 
   var ids = followingList.filter(item=>sheetIds.includes(item)==false)
     console.log(`${ids.length}名未記載のユーザーを発見しました` )
   for(id of ids)
@@ -826,7 +826,7 @@ function getFollowings()
 
   var ids = []
   var nextToken=""
-  var url = Utilities.formatString("https://api.twitter.com/2/users/%s/following",meUserId);
+  var url = Utilities.formatString("https://api.twitter.com/2/users/%s/following",ME_USER_ID );
   do
   {
     //リクエスト実行
@@ -879,7 +879,7 @@ function findTweetsUserIds(word,num)
 function following(targetId){
   //トークン確認
   var service = checkOAuth(appname);
-  var following_ep = `https://api.twitter.com/2/users/${meUserId}/following`;
+  var following_ep = `https://api.twitter.com/2/users/${ME_USER_ID }/following`;
 
    var data = {
     "target_user_id" : targetId
@@ -901,7 +901,7 @@ function following(targetId){
 function deleteFollowing(targetId){
   //トークン確認
   var service = checkOAuth(appname);
-  var following_ep = `https://api.twitter.com/2/users/${meUserId}/following/${targetId}`;
+  var following_ep = `https://api.twitter.com/2/users/${ME_USER_ID }/following/${targetId}`;
 
   var options = {
     "method": "DELETE",
