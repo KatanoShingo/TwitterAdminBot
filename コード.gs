@@ -556,49 +556,51 @@ function getUserList( id, status )
   return ids
 }
 
-function getFollowList(id , status)
+function getFollowList(id, status) 
 {
-  //トークン確認
+  // トークン確認
   var service = checkOAuth(appname);
 
-  var ids = []
-  var nextToken=""
+  var ids = [];
+  var nextToken = "";
   var url = `https://api.twitter.com/2/users/${id}/${status}`;
-  do
+
+  do 
   {
-    //リクエスト実行
-    var requestUrl = url+"?max_results=1000&user.fields=protected"
-    if(nextToken!="")
+    // リクエスト実行
+    var requestUrl = url + "?max_results=1000&user.fields=protected";
+    if (nextToken !== "") 
     {
-      requestUrl +=`&pagination_token=${nextToken}`
+      requestUrl += `&pagination_token=${nextToken}`;
     }
 
-    var response 
-    try
+    var response;
+    try 
     {
-      response = JSON.parse(service.fetch(requestUrl)); 
-    }
-    catch(error)
+      response = JSON.parse(service.fetch(requestUrl));
+    } 
+    catch (error) 
     {
-      console.log(error.message)
+      console.log(error.message);
       throw new Error("エラー");
     }
 
-    //リクエスト結果
-    for(user of response["data"])
+    // リクエスト結果
+    for (const user of response["data"]) 
     {
-      if(user["protected"])
+      if (user["protected"]) 
       {
-        continue
+        continue;
       }
-      ids= ids.concat(user["id"])
-    } 
-    nextToken=response["meta"]["next_token"]
-  }
-  while(response["meta"]["next_token"])
-  
-  console.log(`公開アカウントの【${status}】は${ids.length}名いました。`)
-  return ids
+      ids.push(user["id"]);
+    }
+
+    nextToken = response["meta"]["next_token"];
+  } 
+  while (response["meta"]["next_token"]);
+
+  console.log(`公開アカウントの【${status}】は${ids.length}名いました。`);
+  return ids;
 }
 
 function getErrorUsersData(ids)
