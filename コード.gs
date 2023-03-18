@@ -77,9 +77,6 @@ var endpoint2 = "https://api.twitter.com/2/tweets";
 
 //テストツイートする
 function testtweet(){
-  //トークン確認
-  var service = checkOAuth(appname);
-
   //message本文
   var message = {
     //テキストメッセージ本文
@@ -95,7 +92,7 @@ function testtweet(){
   }
 
   //リクエスト実行
-  var response = JSON.parse(service.fetch(endpoint2, options));
+  var response = RetryResponse(endpoint2, options);
 
   //リクエスト結果
   console.log(response)
@@ -121,11 +118,8 @@ const FollowType = Object.freeze({
 
 //自分の情報取得
 function getMe(){
-  //トークン確認
-  var service = checkOAuth(appname);
-
   //リクエスト実行
-  var response = JSON.parse(service.fetch("https://api.twitter.com/2/users/me"+"?user.fields=public_metrics"+"&expansions=pinned_tweet_id")); 
+  var response = RetryResponse("https://api.twitter.com/2/users/me"+"?user.fields=public_metrics"+"&expansions=pinned_tweet_id"); 
   //リクエスト結果
   var data = response["data"]
   console.log(data)
@@ -134,11 +128,8 @@ function getMe(){
 
 //自分のリスト情報取得
 function getMelist(){
-  //トークン確認
-  var service = checkOAuth(appname);
-
   //リクエスト実行
-  var response = JSON.parse(service.fetch(`https://api.twitter.com/2/users/${ME_USER_ID }/owned_lists`)); 
+  var response = RetryResponse(`https://api.twitter.com/2/users/${ME_USER_ID }/owned_lists`); 
   //リクエスト結果
   console.log(response)
 }
@@ -146,11 +137,8 @@ function getMelist(){
 // 保護リストから保護フォロー一覧を取得
 function getGuardFollowing()
 {
-  //トークン確認
-  var service = checkOAuth(appname);
-
   //リクエスト実行
-  var response = JSON.parse(service.fetch(`https://api.twitter.com/2/lists/${ME_LIST_ID }/members`)); 
+  var response = RetryResponse(`https://api.twitter.com/2/lists/${ME_LIST_ID }/members`); 
   //リクエスト結果
   var ids = []
   for(user of response["data"])
@@ -165,12 +153,9 @@ function getGuardFollowing()
 // 自分のTL取得
 function getTimelines()
 {
-  //トークン確認
-  var service = checkOAuth(appname);
-
   //リクエスト実行
   var url = Utilities.formatString("https://api.twitter.com/2/users/%s/tweets",ME_USER_ID );
-  var response = JSON.parse(service.fetch(url)); //+"?max_results=50"
+  var response = RetryResponse(url); //+"?max_results=50"
   var timelineTweetsData = response["data"]
 
   //リクエスト結果
@@ -182,16 +167,13 @@ function getTimelines()
 // 自分のTLをいいねしたユーザー一覧
 function getMeTweetlikeingUsers()
 {
-  //トークン確認
-  var service = checkOAuth(appname); 
-
   var likeingUserdatas=[];
   //リクエスト実行
   // TLからいいねされたユーザーを取り出す
   for(imeline of getTimelines())
   {
     var url = Utilities.formatString("https://api.twitter.com/2/tweets/%s/liking_users",imeline["id"]);
-    var response = JSON.parse(service.fetch(url));  
+    var response = RetryResponse(url);  
    // console.log(response["data"])
 
     //配列を連結する
@@ -202,7 +184,7 @@ function getMeTweetlikeingUsers()
   }
 
   var url = Utilities.formatString("https://api.twitter.com/2/tweets/%s/liking_users",ME_PINNED_TWEET_ID );
-  var response = JSON.parse(service.fetch(url));  
+  var response = RetryResponse(url);  
 
   //配列を連結する
   if(response["data"])
@@ -528,9 +510,6 @@ function manualFindTweetsUsersfollowing()
 // FFから特定ユーザーのリストを返す
 function getUserList( id, status )
 {
-  //トークン確認
-  var service = checkOAuth(appname);
-
   //リクエスト実行
   var followingList = getFollowList(id , FollowType.FOLLOWING); 
   var followersList = getFollowList(id , FollowType.FOLLOWERS); 
@@ -558,9 +537,6 @@ function getUserList( id, status )
 
 function getFollowList(id, status) 
 {
-  // トークン確認
-  var service = checkOAuth(appname);
-
   var ids = [];
   var nextToken = "";
   var url = `https://api.twitter.com/2/users/${id}/${status}`;
@@ -574,16 +550,7 @@ function getFollowList(id, status)
       requestUrl += `&pagination_token=${nextToken}`;
     }
 
-    var response;
-    try 
-    {
-      response = JSON.parse(service.fetch(requestUrl));
-    } 
-    catch (error) 
-    {
-      console.log(error.message);
-      throw new Error("エラー");
-    }
+    var response = RetryResponse(requestUrl);
 
     // リクエスト結果
     for (const user of response["data"]) 
@@ -605,15 +572,13 @@ function getFollowList(id, status)
 
 function getErrorUsersData(ids)
 {
-  //トークン確認
-  var service = checkOAuth(appname);
   var errorIds = []
  
   while(0<ids.length)
   {
     var chopIds = ids.splice(0,100)
     //リクエスト実行
-    var response = JSON.parse(service.fetch(`https://api.twitter.com/2/users?ids=${chopIds.join(`,`)}`)); 
+    var response = RetryResponse(`https://api.twitter.com/2/users?ids=${chopIds.join(`,`)}`); 
 
     if(response["errors"])
     {
@@ -631,11 +596,8 @@ function getErrorUsersData(ids)
 // 最新ツイートの日時取得
 function getNewTweetDate(id)
 {
-  //トークン確認
-  var service = checkOAuth(appname);
-
   //リクエスト実行
-  var response = JSON.parse(service.fetch(`https://api.twitter.com/2/users/${id}/tweets?tweet.fields=created_at`)); 
+  var response = RetryResponse(`https://api.twitter.com/2/users/${id}/tweets?tweet.fields=created_at`); 
 
   if(response["data"])
   {
@@ -654,11 +616,8 @@ function getNewTweetDate(id)
 // ユーザーが気に入ったツイートの最新日時（最新100件内）
 function getLikedNewTweetDate( id )
 {
-  //トークン確認
-  var service = checkOAuth(appname);
-
   //リクエスト実行
-  var response = JSON.parse(service.fetch(`https://api.twitter.com/2/users/${id}/liked_tweets?tweet.fields=created_at`)); 
+  var response = RetryResponse(`https://api.twitter.com/2/users/${id}/liked_tweets?tweet.fields=created_at`); 
 
   if( response["data"] )
   {
@@ -686,31 +645,8 @@ function getLikedNewTweetDate( id )
 
 function getFFRate(id)
 {
-  //トークン確認
-  var service = checkOAuth(appname);
-
-  var response
-  var count=0
-  while(count<5)
-  {
-    count++
-    try
-    {
-      //リクエスト実行
-      response = JSON.parse(service.fetch(`https://api.twitter.com/2/users/${id}`+"?user.fields=public_metrics")); 
-      break
-    }
-    catch(error)
-    {
-      if(error.message.includes("Address unavailable")==false||count>=5)
-      {
-        throw new Error(error.message);
-      }
-      
-      console.log(error.message)
-      Utilities.sleep(10000)//10秒待ってから再実行
-    }
-  }
+  //リクエスト実行
+  var response = RetryResponse(`https://api.twitter.com/2/users/${id}`+"?user.fields=public_metrics"); 
 
   var data = response["data"]
   var name = data["name"]
@@ -725,32 +661,8 @@ function getFFRate(id)
 
 function getFollowersNum(id)
 {
-  //トークン確認
-  var service = checkOAuth(appname);
-
-  var response
-
-  var count=0
-  while(count<5)
-  {
-    count++
-    try
-    {
-      //リクエスト実行
-      response = JSON.parse(service.fetch(`https://api.twitter.com/2/users/${id}`+"?user.fields=public_metrics")); 
-      break
-    }
-    catch(error)
-    {
-      if(error.message.includes("Address unavailable")==false||count>=5)
-      {
-        throw new Error(error.message);
-      }
-      
-      console.log(error.message)
-      Utilities.sleep(10000)//10秒待ってから再実行
-    }
-  }
+  //リクエスト実行
+  var response = RetryResponse(`https://api.twitter.com/2/users/${id}`+"?user.fields=public_metrics"); 
 
   var data = response["data"]
   var name = data["name"]
@@ -828,9 +740,6 @@ function SetSheetUsersfollowing()
 
 function getFollowings()
 {
-  //トークン確認
-  var service = checkOAuth(appname);
-
   var ids = []
   var nextToken=""
   var url = Utilities.formatString("https://api.twitter.com/2/users/%s/following",ME_USER_ID );
@@ -842,7 +751,7 @@ function getFollowings()
     {
       requestUrl +=`&pagination_token=${nextToken}`
     }
-    var response = JSON.parse(service.fetch(requestUrl)); 
+    var response = RetryResponse(requestUrl); 
     //リクエスト結果
     for(user of response["data"])
     {
@@ -859,17 +768,13 @@ function getFollowings()
 
 function findTweetsUserIds(word,num)
 {
-  //トークン確認
-  var service = checkOAuth(appname);
   // API URL
   var getPoint = 'https://api.twitter.com/2/tweets/search/recent?'
-   // 検索キーワードとパラメータ
-   var keyWord = '&query='+ encodeURIComponent(word)
-   var params = 'expansions=author_id'+`&max_results=${num}`
-   // アクセスURL組み立て
-   var url = getPoint +params  + keyWord
-   var response = service.fetch(url);
-   var result = JSON.parse(response)
+  // 検索キーワードとパラメータ
+  var keyWord = '&query='+ encodeURIComponent(word)
+  var params = 'expansions=author_id'+`&max_results=${num}`
+  
+  var result = RetryResponse(getPoint+params+keyWord)
   
   var ids=[]
   for(tweet of result["data"])
@@ -884,8 +789,6 @@ function findTweetsUserIds(word,num)
 
 
 function following(targetId){
-  //トークン確認
-  var service = checkOAuth(appname);
   var following_ep = `https://api.twitter.com/2/users/${ME_USER_ID }/following`;
 
    var data = {
@@ -900,14 +803,12 @@ function following(targetId){
   }
 
   //リクエスト実行
-  var response = JSON.parse(service.fetch(following_ep,options));
+  var response = RetryResponse(following_ep,options);
 
   console.log(response)
 }
 
 function deleteFollowing(targetId){
-  //トークン確認
-  var service = checkOAuth(appname);
   var following_ep = `https://api.twitter.com/2/users/${ME_USER_ID }/following/${targetId}`;
 
   var options = {
@@ -916,11 +817,36 @@ function deleteFollowing(targetId){
     'accept': "application/json"
   }
   //リクエスト実行
-  var response = JSON.parse(service.fetch(following_ep,options));
+  var response = RetryResponse(following_ep,options);
 
   console.log(response)
 }
 
+function RetryResponse(url,options=null)
+{
+  //トークン確認
+  var service = checkOAuth(appname);
+  var count=0
+  while(count<5)
+  {
+    count++
+    try
+    {
+      //リクエスト実行
+      return JSON.parse(service.fetch(url,options)); 
+    }
+    catch(error)
+    {
+      if(error.message.includes("Address unavailable")==false||count>=5)
+      {
+        throw new Error(error.message);
+      }
+      
+      console.log(error.message)
+      Utilities.sleep(10000)//10秒待ってから再実行
+    }
+  }
+}
 
 //ログアウト
 function reset() {
