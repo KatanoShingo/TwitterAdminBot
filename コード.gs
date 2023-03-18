@@ -179,7 +179,7 @@ function getMeTweetlikeingUsers()
     //配列を連結する
     if(response["data"])
     {   
-      likeingUserdatas= likeingUserdatas.concat(response["data"])
+      likeingUserdatas.push(response["data"])
     }
   }
 
@@ -189,7 +189,7 @@ function getMeTweetlikeingUsers()
   //配列を連結する
   if(response["data"])
   {   
-    likeingUserdatas= likeingUserdatas.concat(response["data"])
+    likeingUserdatas.push(response["data"])
   }
 
   // 特定の情報のみ配列にし直す
@@ -697,7 +697,7 @@ function getSheetIds(sheetName)
   var ids = []
   for(range of ranges)
   {
-    ids = ids.concat(range.toString())
+    ids.push(range.toString())
   } 
   
   console.log(`【${sheetName}】IDリストを${ids.length}件取得しました` )
@@ -755,7 +755,7 @@ function getFollowings()
     //リクエスト結果
     for(user of response["data"])
     {
-      ids= ids.concat(user["id"])
+      ids.push(user["id"])
     } 
     console.log(response)
     nextToken=response["meta"]["next_token"]
