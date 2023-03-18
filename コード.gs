@@ -114,6 +114,11 @@ const SheetNames = Object.freeze({
   REPORT: "report",
 });
 
+const FollowType = Object.freeze({
+  FOLLOWING: "following",
+  FOLLOWERS: "followers",
+});
+
 //自分の情報取得
 function getMe(){
   //トークン確認
@@ -310,7 +315,7 @@ function InactiveUserUnfollow()
 {
   var guardFollowingIds = getGuardFollowing()
   var activeIds = getSheetIds(SheetNames.ACTIVE)
-  var followingIds = getFollowList(ME_USER_ID  , SheetNames.FOLLOWING); 
+  var followingIds = getFollowList(ME_USER_ID  , FollowType.FOLLOWING); 
   var deleteFollowingIds = followingIds.filter(item=>guardFollowingIds.includes(item)==false&&activeIds.includes(item)==false)
   deleteFollowingIds = deleteFollowingIds.reverse()
   
@@ -367,7 +372,7 @@ function SpamUserUnfollow()
   var guardFollowingIds = getGuardFollowing()
   
   //フォロー中
-  var followingIds = getFollowList(ME_USER_ID  , SheetNames.FOLLOWING); 
+  var followingIds = getFollowList(ME_USER_ID  , FollowType.FOLLOWING); 
   
   //フォローしたユーザー日時データ
   var sheetDatas = getSheetDatas(SheetNames.FOLLOWING)
@@ -527,8 +532,8 @@ function getUserList( id, status )
   var service = checkOAuth(appname);
 
   //リクエスト実行
-  var followingList = getFollowList(id , SheetNames.FOLLOWING); 
-  var followersList = getFollowList(id , "followers"); 
+  var followingList = getFollowList(id , FollowType.FOLLOWING); 
+  var followersList = getFollowList(id , FollowType.FOLLOWERS); 
 
   var ids = []
   switch(status)
@@ -809,7 +814,7 @@ function getSheetDatas(sheetName)
 function SetSheetUsersfollowing()
 {
   var sheetIds = getSheetIds(SheetNames.FOLLOWING)
-  var followingList = getFollowList(ME_USER_ID  , SheetNames.FOLLOWING); 
+  var followingList = getFollowList(ME_USER_ID  , FollowType.FOLLOWING); 
   var ids = followingList.filter(item=>sheetIds.includes(item)==false)
     console.log(`${ids.length}名未記載のユーザーを発見しました` )
   for(id of ids)
