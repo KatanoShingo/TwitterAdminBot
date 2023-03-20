@@ -103,7 +103,8 @@ const SheetNames = Object.freeze({
   BOOKING_TARGET: "bookingTarget",
   BOOKING_TARGET_FOLLOWING: "bookingTargetFollowing",
   BOOKING_TARGET_FOLLOWERS: "bookingTargetFollowers",
-  BOOKING_FOLLOWING: "bookingFollowing",
+  MY_FOLLOWING: "myFollowing",
+  MY_FOLLOWERS: "myFollowers",
   ALPHA: "alpha",
   ACTIVE: "active",
   FOLLOWING: "following",
@@ -416,11 +417,18 @@ function FindFriendOfFriendFollowing()
 {
   var sheetIds = getSheetIds(SheetNames.FOLLOWING)
   var skipIds = getSheetIds(SheetNames.SKIP)
-  var userIds = getUserList(TARGET_USER_ID ,"ryoomoi")
+  
+  var followersIds = getSheetIds(SheetNames.BOOKING_TARGET_FOLLOWERS)
+  var followingIds = getSheetIds(SheetNames.BOOKING_TARGET_FOLLOWING)
+  followersIds.shift()
+  followingIds.shift()
+  var userIds = followersIds.filter(item => followingIds.includes(item))
+  
   var followingUsers = userIds.filter(item => sheetIds.includes(item)==false&&skipIds.includes(item)==false)
   console.log(`新規でフォローするアカウントを${followingUsers.length}名取得しました` )
   if(followingUsers.length==0)
   {
+    deleteRowAt(SheetNames.BOOKING_TARGET)
     throw new Error("フォロー出来るアカウントがありません");
   }
 
@@ -839,6 +847,7 @@ function RetryResponse(url,options=null)
     {
       if(error.message.includes("Address unavailable")==false||count>=5)
       {
+        console.log(url)
         throw new Error(error.message);
       }
       
@@ -846,6 +855,131 @@ function RetryResponse(url,options=null)
       Utilities.sleep(10000)//10秒待ってから再実行
     }
   }
+}
+
+function main()
+{
+  var folloSearch = (sheetNames,followType)=>
+  {
+    var targetId 
+    var nextToken
+
+    var bookingData = getRowAt(SheetNames.BOOKING_TARGET)
+    var targetData = getRowAt(sheetNames)
+
+    if(targetData.targetId==bookingData.targetId)
+    {
+      targetId=targetData.targetId;
+      nextToken=targetData.nextToken;
+      if(isNullOrEmpty(nextToken))
+      {
+        console.log(sheetNames+"シートは取得済みです")
+        return
+      }
+    }
+    else
+    {
+      sheetClear(sheetNames)
+      targetId=bookingData.targetId;
+      nextToken=bookingData.nextToken;
+    }
+
+    do
+    {
+      var followers = getFollowListNextToken(followType,targetId,nextToken)
+      updateRowAt(sheetNames,targetId,followers.nextToken)
+      addIds(sheetNames,followers.ids)
+      nextToken=followers.nextToken
+    }
+    while(isNullOrEmpty(nextToken)==false)
+  }
+  folloSearch(SheetNames.BOOKING_TARGET_FOLLOWERS,FollowType.FOLLOWERS)
+  folloSearch(SheetNames.BOOKING_TARGET_FOLLOWING,FollowType.FOLLOWING)
+
+  FindFriendOfFriendFollowing()
+}
+
+function sheetClear(sheetName)
+{
+  var spreadsheet = SpreadsheetApp.getActiveSpreadsheet();
+  var sheet = spreadsheet.getSheetByName(sheetName);
+  sheet.clear()
+}
+
+function isNullOrEmpty(string) 
+{
+  return string == null || string == "";
+}
+
+// シートにターゲットユーザーとnextTokenを記載
+function updateRowAt(sheetName,targetId,nextToken) 
+{
+  var spreadsheet = SpreadsheetApp.getActiveSpreadsheet();
+  var sheet = spreadsheet.getSheetByName(sheetName);
+  var rowData = [targetId,nextToken]
+  var range = sheet.getRange(1, 1, 1, rowData.length);
+
+  // データを上書き
+  range.setValues([rowData]);
+}
+
+// シートにidsの追加
+function addIds(sheetName,ids)
+{
+  var spreadsheet = SpreadsheetApp.getActiveSpreadsheet();
+  var sheet = spreadsheet.getSheetByName(sheetName);
+  var range = sheet.getRange(sheet.getLastRow()+1, 1, ids.length);
+  var idData = []
+  for(id of ids)
+  {
+    idData.push([id])
+  }
+  range.setValues(idData);
+}
+
+function deleteRowAt(sheetName)
+{
+  var spreadsheet = SpreadsheetApp.getActiveSpreadsheet();
+  var sheet = spreadsheet.getSheetByName(sheetName);
+  sheet.deleteRow(1)
+}
+
+// シートからターゲットユーザーとnextTokenを取得
+function getRowAt(sheetName) 
+{
+  var spreadsheet = SpreadsheetApp.getActiveSpreadsheet();
+  var sheet = spreadsheet.getSheetByName(sheetName);
+  var data = sheet.getRange(1, 1, 1, 2).getValues();
+  return {"targetId":data[0][0],"nextToken":data[0][1]}
+}
+
+// ターゲットユーザーのフォローリストとnextTokenを取得
+function getFollowListNextToken(status,targetId,nextToken) 
+{
+  var ids = [];
+  var url = `https://api.twitter.com/2/users/${targetId}/${status}`;
+
+  // リクエスト実行
+  var requestUrl = url + "?max_results=1000&user.fields=protected";
+  if (isNullOrEmpty(nextToken)==false) 
+  {
+    requestUrl += `&pagination_token=${nextToken}`;
+  }
+  
+  var response = RetryResponse(requestUrl);
+
+  // リクエスト結果
+  for (const user of response["data"]) 
+  {
+    if (user["protected"]) 
+    {
+      continue;
+    }
+    ids.push(user["id"]);
+  }
+
+  nextToken = response["meta"]["next_token"];
+  return {"ids":ids,"nextToken":nextToken}
 }
 
 //ログアウト
