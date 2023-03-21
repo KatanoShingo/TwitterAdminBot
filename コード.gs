@@ -231,7 +231,6 @@ function MeTweetlikeingUsersfollowing()
     var name=user[1]
 
     console.log(`フォロー制限防止の為1名のみフォロー実行します` )
-    Utilities.sleep(10000)//10秒待ってからフォローする
     count++
     // console.log(`全体進捗：${count}/${followingUsers.length}` )
     following(userId)
@@ -262,7 +261,6 @@ function FindTweetsUsersfollowing()
     }
 
     console.log(`フォロー制限防止の為1名のみフォロー実行します` )
-    Utilities.sleep(10000)//10秒待ってからフォローする
     following(userId)
     setSheet(userId,SheetNames.FOLLOWING)
     console.log(`ユーザーID${userId}をフォローしました` )
@@ -333,7 +331,6 @@ function InactiveUserUnfollow()
 
     console.log(`最終ツイートが1ヶ月以上前で非アクティブの為フォローを外します。` )
     console.log(`制限防止の為1名のみ実行します` )
-    Utilities.sleep(10000)//10秒待つ
     deleteFollowing(userId)
     console.log(`ユーザーID${userId}をリムーブしました` )
     setSheet( userId, SheetNames.UNFOLLOWING )
@@ -368,7 +365,6 @@ function SpamUserUnfollow()
     var followersNum = getFollowersNum(userData[0])
     if( rate < 0.9 || followersNum < 1000)
     {
-      Utilities.sleep(10000)//10秒待つ
       deleteFollowing(userData[0])
       console.log(`ユーザーID【${userData[0]}】をリムーブしました` )
       setSheet( userData[0], SheetNames.UNFOLLOWING )
@@ -409,7 +405,6 @@ function KataomoiUserUnfollow()
   for( userData of list )
   {
     console.log(`制限防止の為1名のみ実行します` )
-    Utilities.sleep(10000)//10秒待つ
     deleteFollowing(userData[0])
     console.log(`ユーザーID【${userData[0]}】をリムーブしました` )
     setSheet( userData[0], SheetNames.UNFOLLOWING )
@@ -472,7 +467,6 @@ function FindFriendOfFriendFollowing()
 // ユーザーをフォローしてフォローシートに記載する
 function followingAndSetSheet( userId )
 {
-  Utilities.sleep(10000)//10秒待ってからフォローする
   following( userId )
   setSheet( userId, SheetNames.FOLLOWING )
   console.log(`ユーザーID${userId}をフォローしました` )
@@ -511,7 +505,6 @@ function manualFindTweetsUsersfollowing()
       continue
     }
 
-    Utilities.sleep(10000)//10秒待ってからフォローする
     following(userId)
     console.log(`ユーザーID${userId}をフォローしました` )
     setSheet(userId,SheetNames.FOLLOWING)
