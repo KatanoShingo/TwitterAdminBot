@@ -314,8 +314,7 @@ function InactiveUserUnfollow()
     var newTweetDate = getNewTweetDate(userId)
 
     // 1ヶ月前の日時取得
-    var date = new Date();
-    date.setMonth(date.getMonth() - 1);
+    var date = getOneMonthAgoDatetime()
 
     if(newTweetDate==null || date<newTweetDate)
     {
@@ -348,8 +347,7 @@ function SpamUserUnfollow()
   var alphaIds = getSheetIds(SheetNames.ALPHA)
 
   // 1週間前の日時取得
-  var date = new Date();
-  date.setDate(date.getDate() - 7);
+  var date = getOneWeekAgoDatetime()
 
   //保護リスト
   var guardFollowingIds = getGuardFollowing()
@@ -386,20 +384,26 @@ function SpamUserUnfollow()
 function KataomoiUserUnfollow()
 { 
   // 1週間前の日時取得
-  var date = new Date();
-  date.setDate(date.getDate() - 7);
+  var date = getOneWeekAgoDatetime()
 
   //保護リスト
   var guardFollowingIds = getGuardFollowing()
   
   //片思いリスト
-  var kataomoiIds = getUserList(ME_USER_ID ,"kataomoi")
+  var followersIds = getSheetIds(SheetNames.MY_FOLLOWERS)
+  var followingIds = getSheetIds(SheetNames.MY_FOLLOWING)
+  followersIds.shift()
+  followingIds.shift()
+  var kataomoiIds = followingIds.filter( item => followersIds.includes( item ) == false )
   
   //フォローしたユーザー日時データ
   var sheetDatas = getSheetDatas(SheetNames.FOLLOWING)
 
+  //フォロー解除したユーザーリスト
+  var unfollowing = getSheetIds(SheetNames.UNFOLLOWING)
+
   //フォロー解除リスト
-  var list = sheetDatas.filter(item=>guardFollowingIds.includes(item[0])==false&&kataomoiIds.includes(item[0])&&item[1]<date)
+  var list = sheetDatas.filter(item=>unfollowing.includes(item[0])==false&&guardFollowingIds.includes(item[0])==false&&kataomoiIds.includes(item[0])&&item[1]<date)
   
   console.log( `フォロー解除リストを${list.length}名取得`)
   for( userData of list )
@@ -445,8 +449,7 @@ function FindFriendOfFriendFollowing()
     var newTweetDate = getNewTweetDate(userId)
 
     // 24時間前の日時取得
-    var date = new Date();
-    date.setDate(date.getDate() - 1);
+    var date = getOneDayAgoDatetime()
 
     if( newTweetDate != null && date < newTweetDate )
     {
@@ -857,9 +860,9 @@ function RetryResponse(url,options=null)
   }
 }
 
-function main()
+function mainFollowing()
 {
-  var folloSearch = (sheetNames,followType)=>
+  var targetFollowSearch = (sheetNames,followType)=>
   {
     var targetId 
     var nextToken
@@ -893,10 +896,47 @@ function main()
     }
     while(isNullOrEmpty(nextToken)==false)
   }
-  folloSearch(SheetNames.BOOKING_TARGET_FOLLOWERS,FollowType.FOLLOWERS)
-  folloSearch(SheetNames.BOOKING_TARGET_FOLLOWING,FollowType.FOLLOWING)
+  targetFollowSearch(SheetNames.BOOKING_TARGET_FOLLOWERS,FollowType.FOLLOWERS)
+  targetFollowSearch(SheetNames.BOOKING_TARGET_FOLLOWING,FollowType.FOLLOWING)
 
   FindFriendOfFriendFollowing()
+}
+
+function mainUnfollowing()
+{
+  var myFollowSearch = (sheetNames,followType)=>
+  {
+    var nextToken
+    var followData = getRowAt(sheetNames)
+
+    if(isNullOrEmpty(followData.targetId) || followData.date<getOneDayAgoDatetime())
+    {
+      console.log(sheetNames+"シートを更新します")
+      sheetClear(sheetNames)
+    }
+    else if(isNullOrEmpty(followData.nextToken)==false)
+    {
+      console.log(sheetNames+"シートに追加します")
+      nextToken=followData.nextToken;
+    }
+    else
+    {
+      console.log(sheetNames+"シートは取得済みです")
+      return
+    }
+
+    do
+    {
+      var followers = getFollowListNextToken(followType,ME_USER_ID,nextToken)
+      updateRowAt(sheetNames,ME_USER_ID,followers.nextToken)
+      addIds(sheetNames,followers.ids)
+      nextToken=followers.nextToken
+    }
+    while(isNullOrEmpty(nextToken)==false)
+  }
+  myFollowSearch(SheetNames.MY_FOLLOWERS,FollowType.FOLLOWERS)
+  myFollowSearch(SheetNames.MY_FOLLOWING,FollowType.FOLLOWING)
+  KataomoiUserUnfollow()
 }
 
 function sheetClear(sheetName)
@@ -911,16 +951,36 @@ function isNullOrEmpty(string)
   return string == null || string == "";
 }
 
-// シートにターゲットユーザーとnextTokenを記載
+function getOneWeekAgoDatetime() 
+{
+  // 1週間前の日時取得
+  var date = new Date();
+  return date.setDate(date.getDate() - 7);
+}
+
+function getOneDayAgoDatetime() {
+  // 1日前の日時取得
+  var date = new Date();
+  return new Date(date.setDate(date.getDate() - 1));
+}
+
+function getOneMonthAgoDatetime() {
+  // 1ヶ月前の日時取得
+  var date = new Date();
+  return new Date(date.setMonth(date.getMonth() - 1));
+}
+
+// シートにターゲットユーザーとnextTokenと更新日付を記載
 function updateRowAt(sheetName,targetId,nextToken) 
 {
   var spreadsheet = SpreadsheetApp.getActiveSpreadsheet();
   var sheet = spreadsheet.getSheetByName(sheetName);
-  var rowData = [targetId,nextToken]
+  var rowData = [targetId,nextToken,new Date()]
   var range = sheet.getRange(1, 1, 1, rowData.length);
 
   // データを上書き
   range.setValues([rowData]);
+  console.log(`【${sheetName}】シートにid【${targetId}】とnextToken【${nextToken}】を記載` )
 }
 
 // シートにidsの追加
@@ -935,6 +995,7 @@ function addIds(sheetName,ids)
     idData.push([id])
   }
   range.setValues(idData);
+  console.log(`【${sheetName}】シートにidを【${ids.length}】件記載` )
 }
 
 function deleteRowAt(sheetName)
@@ -949,8 +1010,8 @@ function getRowAt(sheetName)
 {
   var spreadsheet = SpreadsheetApp.getActiveSpreadsheet();
   var sheet = spreadsheet.getSheetByName(sheetName);
-  var data = sheet.getRange(1, 1, 1, 2).getValues();
-  return {"targetId":data[0][0],"nextToken":data[0][1]}
+  var data = sheet.getRange(1, 1, 1, 3).getValues();
+  return {"targetId":data[0][0],"nextToken":data[0][1],"date":new Date(data[0][2])}
 }
 
 // ターゲットユーザーのフォローリストとnextTokenを取得
@@ -979,6 +1040,8 @@ function getFollowListNextToken(status,targetId,nextToken)
   }
 
   nextToken = response["meta"]["next_token"];
+  
+  console.log(`【${targetId}】の【${status}】リストを【${ids.length}】件取得しました` )
   return {"ids":ids,"nextToken":nextToken}
 }
 
