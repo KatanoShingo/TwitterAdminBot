@@ -882,7 +882,7 @@ function mainFollowing()
 
     do
     {
-      var followers = getFollowListNextToken(followType,targetId,nextToken)
+      var followers = getFollowListNextToken(followType,targetId,nextToken,false)
       updateRowAt(sheetNames,targetId,followers.nextToken)
       addIds(sheetNames,followers.ids)
       nextToken=followers.nextToken
@@ -1008,24 +1008,29 @@ function getRowAt(sheetName)
 }
 
 // ターゲットユーザーのフォローリストとnextTokenを取得
-function getFollowListNextToken(status,targetId,nextToken) 
+function getFollowListNextToken(status,targetId,nextToken,isInNewUser=true) 
 {
   var ids = [];
   var url = `https://api.twitter.com/2/users/${targetId}/${status}`;
 
   // リクエスト実行
   var requestUrl = url + "?max_results=1000&user.fields=protected";
+  if(isInNewUser==false)
+  {
+    requestUrl += `,created_at`;
+  }
+
   if (isNullOrEmpty(nextToken)==false) 
   {
     requestUrl += `&pagination_token=${nextToken}`;
   }
   
   var response = RetryResponse(requestUrl);
-
+  
   // リクエスト結果
   for (const user of response["data"]) 
   {
-    if (user["protected"]) 
+    if (user["protected"]||getOneMonthAgoDatetime()<user.created_at) 
     {
       continue;
     }
