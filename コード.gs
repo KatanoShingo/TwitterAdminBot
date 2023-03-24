@@ -401,7 +401,12 @@ function KataomoiUserUnfollow()
   //フォロー解除リスト
   var list = sheetDatas.filter(item=>unfollowing.includes(item[0])==false&&guardFollowingIds.includes(item[0])==false&&kataomoiIds.includes(item[0])&&item[1]<date)
   
-  console.log( `フォロー解除リストを${list.length}名取得`)
+  console.log(`フォロー解除リストを${list.length}名取得`)
+  if(list.length==0)
+  {
+    throw new Error("フォロー解除するアカウントがありませんでした");
+  }
+
   for( userData of list )
   {
     console.log(`制限防止の為1名のみ実行します` )
