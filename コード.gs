@@ -889,7 +889,7 @@ function mainFollowing()
     {
       var followers = getFollowListNextToken(followType,targetId,nextToken,false)
       updateRowAt(sheetNames,targetId,followers.nextToken)
-      addIds(sheetNames,followers.ids)
+      addUsers(sheetNames,followers.users)
       nextToken=followers.nextToken
     }
     while(isNullOrEmpty(nextToken)==false)
@@ -927,7 +927,7 @@ function mainUnfollowing()
     {
       var followers = getFollowListNextToken(followType,ME_USER_ID,nextToken)
       updateRowAt(sheetNames,ME_USER_ID,followers.nextToken)
-      addIds(sheetNames,followers.ids)
+      addUsers(sheetNames,followers.users)
       nextToken=followers.nextToken
     }
     while(isNullOrEmpty(nextToken)==false)
@@ -981,19 +981,19 @@ function updateRowAt(sheetName,targetId,nextToken)
   console.log(`【${sheetName}】シートにid【${targetId}】とnextToken【${nextToken}】を記載` )
 }
 
-// シートにidsの追加
-function addIds(sheetName,ids)
+// シートにusersの追加
+function addUsers(sheetName,users)
 {
   var spreadsheet = SpreadsheetApp.getActiveSpreadsheet();
   var sheet = spreadsheet.getSheetByName(sheetName);
-  var range = sheet.getRange(sheet.getLastRow()+1, 1, ids.length);
-  var idData = []
-  for(id of ids)
+  var range = sheet.getRange(sheet.getLastRow()+1, 1, users.length,3);//列数を自動で変わるようにしたい
+  var userData = []
+  for(user of users)
   {
-    idData.push([id])
+    userData.push([user.id,user.public_metrics.following_count,user.public_metrics.followers_count])
   }
-  range.setValues(idData);
-  console.log(`【${sheetName}】シートにidを【${ids.length}】件記載` )
+  range.setValues(userData);
+  console.log(`【${sheetName}】シートにuserDataを【${users.length}】件記載` )
 }
 
 function deleteRowAt(sheetName)
@@ -1015,11 +1015,11 @@ function getRowAt(sheetName)
 // ターゲットユーザーのフォローリストとnextTokenを取得
 function getFollowListNextToken(status,targetId,nextToken,isInNewUser=true) 
 {
-  var ids = [];
+  var users = [];
   var url = `https://api.twitter.com/2/users/${targetId}/${status}`;
 
   // リクエスト実行
-  var requestUrl = url + "?max_results=1000&user.fields=protected";
+  var requestUrl = url + "?max_results=1000&user.fields=public_metrics,protected";
   if(isInNewUser==false)
   {
     requestUrl += `,created_at`;
@@ -1039,13 +1039,13 @@ function getFollowListNextToken(status,targetId,nextToken,isInNewUser=true)
     {
       continue;
     }
-    ids.push(user["id"]);
+    users.push(user);
   }
 
   nextToken = response["meta"]["next_token"];
   
-  console.log(`【${targetId}】の【${status}】リストを【${ids.length}】件取得しました` )
-  return {"ids":ids,"nextToken":nextToken}
+  console.log(`【${targetId}】の【${status}】リストを【${users.length}】件取得しました` )
+  return {"users":users,"nextToken":nextToken}
 }
 
 //ログアウト
