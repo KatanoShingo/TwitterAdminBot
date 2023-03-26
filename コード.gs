@@ -340,39 +340,45 @@ function InactiveUserUnfollow()
 
 // フォロー中が多いアカウントのフォローを外す
 function SpamUserUnfollow()
-{ 
-  var alphaIds = getSheetIds(SheetNames.ALPHA)
-
+{
   // 1週間前の日時取得
   var date = getOneWeekAgoDatetime()
 
   //保護リスト
   var guardFollowingIds = getGuardFollowing()
   
-  //フォロー中
-  var followingIds = getFollowList(ME_USER_ID  , FollowType.FOLLOWING); 
+  //フォロー中ユーザーデータ
+  var followingUsers = getSheetUsers(SheetNames.MY_FOLLOWING)
   
   //フォローしたユーザー日時データ
   var sheetDatas = getSheetDatas(SheetNames.FOLLOWING)
+  
+  //フォロー解除したユーザーリスト
+  var unfollowing = getSheetIds(SheetNames.UNFOLLOWING)
 
   //フォロー解除リスト
-  var list = sheetDatas.filter(item=>guardFollowingIds.includes(item[0])==false&&followingIds.includes(item[0])&&item[1]<date&&alphaIds.includes(item[0])==false)
-  
-  console.log( `フォロー解除リストを${list.length}名取得`)
-  for( userData of list )
-  { 
-    var rate = getFFRate(userData[0])
-    var followersNum = getFollowersNum(userData[0])
-    if( rate < 0.9 || followersNum < 1000)
-    {
-      deleteFollowing(userData[0])
-      console.log(`ユーザーID【${userData[0]}】をリムーブしました` )
-      setSheet( userData[0], SheetNames.UNFOLLOWING )
-      return
-    }
+  var list = sheetDatas.filter(item=>guardFollowingIds.includes(item[0])==false&&followingUsers.some(function(innerArray) {
+    return Object.values(innerArray).includes(item[0]);
+  })&&item[1]<date&&unfollowing.includes(item[0])==false)
 
-    console.log(`FF比が0.9以上&フォロワーが1000以上でした` )
-    setSheet(userData[0],SheetNames.ALPHA)
+  // FF比とフォロー数を考慮
+  var unfollowList = followingUsers.filter(item=>list.some(function(innerArray) {
+    return innerArray.includes(item.id);
+  })&&(((item.followers_count/item.following_count)<0.8)||((item.followers_count/item.following_count)<1.1&&item.followers_count>4000)))
+  
+  console.log( `フォロー解除リストを${unfollowList.length}名取得`)
+  if(unfollowList.length==0)
+  {
+    console.log("フォロー解除するアカウントがありませんでした");
+    return false;
+  }
+
+  for( userData of unfollowList )
+  { 
+    deleteFollowing(userData.id)
+    console.log(`ユーザーID【${userData.id}】をリムーブしました` )
+    setSheet( userData.id, SheetNames.UNFOLLOWING )
+    return true;
   }
 }
 
@@ -404,7 +410,8 @@ function KataomoiUserUnfollow()
   console.log(`フォロー解除リストを${list.length}名取得`)
   if(list.length==0)
   {
-    throw new Error("フォロー解除するアカウントがありませんでした");
+    console.log("フォロー解除するアカウントがありませんでした");
+    return false;
   }
 
   for( userData of list )
@@ -413,7 +420,7 @@ function KataomoiUserUnfollow()
     deleteFollowing(userData[0])
     console.log(`ユーザーID【${userData[0]}】をリムーブしました` )
     setSheet( userData[0], SheetNames.UNFOLLOWING )
-    return
+    return true;
   }
 }
 
@@ -714,6 +721,25 @@ function getSheetIds(sheetName)
 }
 
 //スプレットシートからユーザーリスト読み込む
+function getSheetUsers(sheetName)
+{
+  var spreadsheet = SpreadsheetApp.getActiveSpreadsheet();
+  var sheet = spreadsheet.getSheetByName(sheetName);
+  var lastRow = sheet.getLastRow();
+  var ranges = sheet.getRange(2, 1, lastRow,3).getValues();
+  
+  //型がずれている場合があるので揃える
+  var users = []
+  for(range of ranges)
+  {
+    users.push({"id":range[0].toString(),"following_count":parseInt(range[1]),"followers_count":parseInt(range[2])})
+  } 
+  
+  console.log(`【${sheetName}】Usersリストを${users.length}件取得しました` )
+  return users
+}
+
+//スプレットシートからユーザーリスト読み込む
 function getSheetDatas(sheetName)
 {
   var spreadsheet = SpreadsheetApp.getActiveSpreadsheet();
@@ -934,7 +960,15 @@ function mainUnfollowing()
   }
   myFollowSearch(SheetNames.MY_FOLLOWERS,FollowType.FOLLOWERS)
   myFollowSearch(SheetNames.MY_FOLLOWING,FollowType.FOLLOWING)
-  KataomoiUserUnfollow()
+  if(KataomoiUserUnfollow())
+  {
+    return
+  }
+  if(SpamUserUnfollow())
+  {
+    return
+  }
+  throw new Error
 }
 
 function sheetClear(sheetName)
