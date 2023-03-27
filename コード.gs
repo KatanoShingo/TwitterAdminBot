@@ -449,7 +449,7 @@ function FindFriendOfFriendFollowing()
   }
   
   var followingUsers = userIds.filter(item => sheetIds.includes(item)==false&&skipIds.includes(item)==false)
-  var list = followersUsers.filter(item=>followingUsers.includes(item.id)&&item.followers_count<2000)
+  var list = followersUsers.filter(item=>followingUsers.includes(item.id)&&item.followers_count<1000)
   console.log(`新規でフォローするアカウントを${list.length}名取得しました` )
   if(list.length==0)
   {
