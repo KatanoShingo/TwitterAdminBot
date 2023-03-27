@@ -429,6 +429,7 @@ function FindFriendOfFriendFollowing()
   var sheetIds = getSheetIds(SheetNames.FOLLOWING)
   var skipIds = getSheetIds(SheetNames.SKIP)
   
+  var followersUsers = getSheetUsers(SheetNames.BOOKING_TARGET_FOLLOWERS)
   var followersIds = getSheetIds(SheetNames.BOOKING_TARGET_FOLLOWERS)
   var followingIds = getSheetIds(SheetNames.BOOKING_TARGET_FOLLOWING)
   followersIds.shift()
@@ -448,16 +449,18 @@ function FindFriendOfFriendFollowing()
   }
   
   var followingUsers = userIds.filter(item => sheetIds.includes(item)==false&&skipIds.includes(item)==false)
-  console.log(`新規でフォローするアカウントを${followingUsers.length}名取得しました` )
-  if(followingUsers.length==0)
+  var list = followersUsers.filter(item=>followingUsers.includes(item.id)&&item.followers_count<2000)
+  console.log(`新規でフォローするアカウントを${list.length}名取得しました` )
+  if(list.length==0)
   {
     deleteRowAt(SheetNames.BOOKING_TARGET)
     throw new Error("フォロー出来るアカウントがありません");
   }
 
-  for(userId of followingUsers)
+  for(user of list)
   {
-    var rate = getFFRate(userId)
+    var userId = user.id
+    var rate = user.followers_count/user.following_count
     if( rate > 1.1 )
     {
       console.log(`FF比が1.1以上の為飛ばします` )
