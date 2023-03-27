@@ -433,7 +433,19 @@ function FindFriendOfFriendFollowing()
   var followingIds = getSheetIds(SheetNames.BOOKING_TARGET_FOLLOWING)
   followersIds.shift()
   followingIds.shift()
-  var userIds = followersIds.filter(item => followingIds.includes(item))
+
+  var userIds
+  var bookingData = getRowAt(SheetNames.BOOKING_TARGET)
+  if(bookingData.isFollowers)
+  {
+    console.log(`フォロワー全てを対象にします` )
+    userIds = followersIds
+  }
+  else
+  {
+    console.log(`相互フォローのみを対象にします` )
+    userIds = followersIds.filter(item => followingIds.includes(item))
+  }
   
   var followingUsers = userIds.filter(item => sheetIds.includes(item)==false&&skipIds.includes(item)==false)
   console.log(`新規でフォローするアカウントを${followingUsers.length}名取得しました` )
@@ -1042,8 +1054,8 @@ function getRowAt(sheetName)
 {
   var spreadsheet = SpreadsheetApp.getActiveSpreadsheet();
   var sheet = spreadsheet.getSheetByName(sheetName);
-  var data = sheet.getRange(1, 1, 1, 3).getValues();
-  return {"targetId":data[0][0],"nextToken":data[0][1],"date":new Date(data[0][2])}
+  var data = sheet.getRange(1, 1, 1, 4).getValues();
+  return {"targetId":data[0][0],"nextToken":data[0][1],"date":new Date(data[0][2]),"isFollowers":Boolean(data[0][3])}
 }
 
 // ターゲットユーザーのフォローリストとnextTokenを取得
