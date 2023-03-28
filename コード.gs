@@ -366,6 +366,8 @@ function SpamUserUnfollow()
     return innerArray.includes(item.id);
   })&&(((item.followers_count/item.following_count)<0.8)||((item.followers_count/item.following_count)<1&&item.followers_count>4000)))
   
+  unfollowList.reverse();
+  
   console.log( `フォロー解除リストを${unfollowList.length}名取得`)
   if(unfollowList.length==0)
   {
