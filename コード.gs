@@ -449,7 +449,7 @@ function FindFriendOfFriendFollowing()
   }
   
   var followingUsers = userIds.filter(item => sheetIds.includes(item)==false&&skipIds.includes(item)==false)
-  var list = followersUsers.filter(item=>followingUsers.includes(item.id)&&item.followers_count<1000)
+  var list = followersUsers.filter(item=>followingUsers.includes(item.id)&&item.followers_count<1000&&item.followers_count/item.following_count<1.1)
   console.log(`新規でフォローするアカウントを${list.length}名取得しました` )
   if(list.length==0)
   {
@@ -460,13 +460,6 @@ function FindFriendOfFriendFollowing()
   for(user of list)
   {
     var userId = user.id
-    var rate = user.followers_count/user.following_count
-    if( rate > 1.1 )
-    {
-      console.log(`FF比が1.1以上の為飛ばします` )
-      setSheet(userId,SheetNames.SKIP)
-      continue
-    }
 
     var newTweetDate = getNewTweetDate(userId)
 
