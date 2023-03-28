@@ -364,7 +364,7 @@ function SpamUserUnfollow()
   // FF比とフォロー数を考慮
   var unfollowList = followingUsers.filter(item=>list.some(function(innerArray) {
     return innerArray.includes(item.id);
-  })&&(((item.followers_count/item.following_count)<0.8)||((item.followers_count/item.following_count)<1.1&&item.followers_count>4000)))
+  })&&(((item.followers_count/item.following_count)<0.8)||((item.followers_count/item.following_count)<1&&item.followers_count>4000)))
   
   console.log( `フォロー解除リストを${unfollowList.length}名取得`)
   if(unfollowList.length==0)
