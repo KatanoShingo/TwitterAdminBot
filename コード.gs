@@ -896,6 +896,15 @@ function RetryResponse(url,options=null)
 
 function mainFollowing()
 {
+  var followingCount = parseInt(PropertiesService.getScriptProperties().getProperty('followingCount'));
+  ++followingCount;
+  PropertiesService.getScriptProperties().setProperty('followingCount',followingCount );
+  if(followingCount%5==0)
+  {
+    console.log("5回に1回は処理しません")
+    return
+  }
+  
   var targetFollowSearch = (sheetNames,followType)=>
   {
     var targetId 
