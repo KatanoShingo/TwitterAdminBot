@@ -899,9 +899,9 @@ function mainFollowing()
   var followingCount = parseInt(PropertiesService.getScriptProperties().getProperty('followingCount'));
   ++followingCount;
   PropertiesService.getScriptProperties().setProperty('followingCount',followingCount );
-  if(followingCount%5==0)
+  if(followingCount%10==0)
   {
-    console.log("5回に1回は処理しません")
+    console.log("10回に1回は処理しません")
     return
   }
   
