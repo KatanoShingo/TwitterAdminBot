@@ -364,7 +364,7 @@ function SpamUserUnfollow()
   // FF比とフォロー数を考慮
   var unfollowList = followingUsers.filter(item=>list.some(function(innerArray) {
     return innerArray.includes(item.id);
-  })&&(((item.followers_count/item.following_count)<0.8)||((item.followers_count/item.following_count)<1&&item.followers_count>4000)))
+  })&&(((item.followers_count/item.following_count)<0.8)||((item.followers_count/item.following_count)<1&&item.followers_count>2500)))
   
   unfollowList.reverse();
   
@@ -896,14 +896,6 @@ function RetryResponse(url,options=null)
 
 function mainFollowing()
 {
-  var followingCount = parseInt(PropertiesService.getScriptProperties().getProperty('followingCount'));
-  ++followingCount;
-  PropertiesService.getScriptProperties().setProperty('followingCount',followingCount );
-  if(followingCount%10==0)
-  {
-    console.log("10回に1回は処理しません")
-    return
-  }
   
   var targetFollowSearch = (sheetNames,followType)=>
   {
@@ -1063,6 +1055,54 @@ function getRowAt(sheetName)
   var sheet = spreadsheet.getSheetByName(sheetName);
   var data = sheet.getRange(1, 1, 1, 4).getValues();
   return {"targetId":data[0][0],"nextToken":data[0][1],"date":new Date(data[0][2]),"isFollowers":Boolean(data[0][3])}
+}
+
+function tst()
+{
+  var count = parseInt(PropertiesService.getScriptProperties().getProperty('count'));
+  while(true)
+  {
+    count++
+    var data = getRowAtIndex("search",count)
+    if(isNullOrEmpty(data.id))
+    {
+      return
+    }
+
+    if(data.tweets_date!=null)
+    {
+      continue
+    }
+
+    var tweetDate = getNewTweetDate(data.id)
+    var likedDate = getLikedNewTweetDate(data.id)
+    updateRowAtIndex("search",count,data.id,data.following_count,data.followers_count,tweetDate,likedDate)
+    PropertiesService.getScriptProperties().setProperty('count',count );
+  }
+  
+}
+
+function getRowAtIndex(sheetName,index) 
+{
+  var spreadsheet = SpreadsheetApp.getActiveSpreadsheet();
+  var sheet = spreadsheet.getSheetByName(sheetName);
+  var data = sheet.getRange(index, 1, 1, 5).getValues();
+
+  var tweets_date = isNullOrEmpty(data[0][3])?null:new Date(data[0][3])
+  var likes_date = isNullOrEmpty(data[0][4])?null:new Date(data[0][4])
+  return {"id":data[0][0],"following_count":parseInt(data[0][1]),"followers_count":parseInt(data[0][2]),"tweets_date":tweets_date,"likes_date":likes_date}
+}
+
+function updateRowAtIndex(sheetName,index,id,following_count,followers_count,tweets_date,likes_date) 
+{
+  var spreadsheet = SpreadsheetApp.getActiveSpreadsheet();
+  var sheet = spreadsheet.getSheetByName(sheetName);
+  var rowData = [id,following_count,followers_count,tweets_date,likes_date]
+  var range = sheet.getRange(index, 1, 1, rowData.length);
+
+  // データを上書き
+  range.setValues([rowData]);
+  console.log(`【${sheetName}】シートにid【${id}】のデータ記載` )
 }
 
 // ターゲットユーザーのフォローリストとnextTokenを取得
