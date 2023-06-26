@@ -110,6 +110,7 @@ const SheetNames = Object.freeze({
   FOLLOWING: "following",
   UNFOLLOWING: "unfollowing",
   REPORT: "report",
+  GUARDFOLLOWING: "guardFollowing",
 });
 
 const FollowType = Object.freeze({
@@ -138,17 +139,36 @@ function getMelist(){
 // 保護リストから保護フォロー一覧を取得
 function getGuardFollowing()
 {
-  //リクエスト実行
-  var response = RetryResponse(`https://api.twitter.com/2/lists/${ME_LIST_ID }/members`); 
-  //リクエスト結果
-  var ids = []
-  for(user of response["data"])
+ var guardFollowSearch = (sheetNames)=>
   {
-    ids.push(user["id"])
+    var followData = getRowAt(sheetNames)
+
+    if(isNullOrEmpty(followData.targetId) || followData.date<getOneWeekAgoDatetime())
+    {
+      console.log(sheetNames+"シートを更新します")
+      sheetClear(sheetNames)
+    }
+    else
+    {
+      console.log(sheetNames+"シートは取得済みです")
+      return
+    }
+
+    //リクエスト実行
+    var response = RetryResponse(`https://api.twitter.com/2/lists/${ME_LIST_ID }/members?user.fields=public_metrics`); 
+    //リクエスト結果
+    var users = []
+    for(user of response["data"])
+    {
+      users.push(user)
+    }
+    console.log(`保護フォロー一覧を${users.length}名取得しました` )
+    updateRowAt(sheetNames,ME_USER_ID,"")
+    addUsers(sheetNames,users)
   }
-  
-  console.log(`保護フォロー一覧を${ids.length}名取得しました` )
-  return ids
+  guardFollowSearch(SheetNames.GUARDFOLLOWING)
+
+  return getSheetIds(SheetNames.GUARDFOLLOWING)
 }
 
 // 自分のTL取得
@@ -878,6 +898,7 @@ function RetryResponse(url,options=null)
     try
     {
       //リクエスト実行
+      console.log("【リクエスト実行】"+url)
       return JSON.parse(service.fetch(url,options)); 
     }
     catch(error)
